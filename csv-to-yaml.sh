@@ -1,27 +1,54 @@
 #!/bin/bash
 
-# Options
-optTempFile="/tmp/csv-to-yaml.tmp"
+# TODO: -f FILE
+# TODO: -d DELIMITER
+# TODO: -t (TRANSPOSE)
 
-# First argument must be an CSV file
-if [[ $1 ]]; then
-  if [[ -f $1 ]]; then
-    echo "OK - valid file"
+##########
+# Config #
+##########
+optTempFile="/tmp/csv-to-yaml.tmp"
+optDelimiter="|"
+
+#############
+# Functions #
+#############
+
+getHelp() {
+  echo "Lowbit Tools - CSV to YAML"
+  echo
+  echo "Syntax:"
+  echo "  `basename $0` -f FILE [-d DELIMITER] [--step]"
+}
+
+readArguments() {
+
+  # First argument must be a CSV file
+  if [[ $1 ]]; then
+    if [[ -f $1 ]]; then
+      echo "OK - valid file"
+    else
+      echo "File not found"
+      exit 1
+    fi
   else
-    echo "File not found"
+    echo "Missing file argument"
     exit 1
   fi
-else
-  echo "Missing file argument"
-  exit 1
-fi
 
-# Saving the file to a variable
-inputFile=$1
-outputFile=`echo "${inputFile}" | sed s/'.csv'/'.yml'/g`
+  # Saving the file to a variable
+  inputFile=$1
+  outputFile=`echo "${inputFile}" | sed s/'.csv'/'.yml'/g`
 
-echo "Input file => ${inputFile}"
-echo "Output file => ${outputFile}"
+  echo "Input file => ${inputFile}"
+  echo "Output file => ${outputFile}"
+
+
+}
+
+##########
+# Script #
+##########
 
 # The temp files must be empty
 > ${optTempFile}.1
@@ -38,13 +65,19 @@ IFS=$'\n'
 for line in `cat ${optTempFile}.1`; do
   IFS=$'\n'
 
-  echo "Linha => ${line}"
+  # Getting line
+  echo "Line => ${line}"
 
-  key=`echo ${line} | cut -d, -f1`
-  value=`echo ${line} | cut -d, -f2`
+  # Getting Key
+  key=`echo ${line} | cut -d${optDelimiter} -f1`
+  echo "Key => ${key}"
 
-  echo "Chave => ${key}"
-  echo "Valor => ${value}"
+  # Getting Value
+  value=`echo ${line} | cut -d${optDelimiter} -f2`
+  if [[ $value == "" ]]; then
+    value="Null"
+  fi
+  echo "Value => ${value}"
 
   # Counting the number of elements in key
   elements=`echo "${key}" | tr "." "\n" | wc -l`
@@ -96,3 +129,6 @@ rm "${optTempFile}.2"
 # The End, my friend.
 echo "CSV file converted (I guess)"; echo
 cat "${outputFile}"; echo
+
+# Validating the awesome YAML
+yamllint ${outputFile}

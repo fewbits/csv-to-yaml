@@ -4,15 +4,16 @@ Converting a transposed CSV to YAML
 
 ## About
 
-This is very basic Shell Script thar converts a transposed CSV file to a beautiful YAML ;)
+This is very basic Shell Script that converts a transposed CSV file to a beautiful YAML ;)
 
 ## Dependencies
 
-I guess you only need `bash`.
+- `bash`
+- `yamllint` (*Package Manager* or `pip`)
 
 ## Example
 
-The `csv-to-yaml.sh` script works in a very simple way. You just need to pass the path of a CSV file as the first argument of the script, and the output will a YAML file with the same name of the CSV, but with the `.yml` extention instead of `.csv`.
+The `csv-to-yaml.sh` script works in a very simple way. You just need to pass the path of a CSV file as the first argument of the script, and the output will be a YAML file with the same name of the CSV, but with the `.yml` extention instead of `.csv`.
 
 ### Input
 
