@@ -1,0 +1,11 @@
+---
+computer:
+  brand: Generic Brand
+  price: US$499
+  specs:
+    cpu:
+      clock: 1000GHz
+      cores: 4
+    memory:
+      max: 32Gb
+      slots: 4

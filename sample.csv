@@ -1,0 +1,6 @@
+computer.specs.cpu.cores,4
+computer.specs.cpu.clock,1000GHz
+computer.specs.memory.slots,4
+computer.specs.memory.max,32Gb
+computer.price,US$499
+computer.brand,Generic Brand
