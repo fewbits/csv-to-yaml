@@ -67,7 +67,7 @@ logMessage() { # Logs a message
 
   # Validating the number of arguments
   if [[ ! "${2}" ]]; then
-    echo "Error: 'sysLogMessage' function called with wrong number of arguments (expected 2)"
+    echo "Error: 'logMessage' function called with wrong number of arguments (expected 2)"
     exit 1
   fi
 
@@ -284,22 +284,49 @@ convertFile() {
     elements=`echo "${key}" | tr "." "\n" | wc -l`
     logMessage debug "  Key elements: ${elements}"
 
+    nextStep
+
     # Loop though key elements
     IFS="."
-    identation="" # Identation starts in zero
-    level=1 # Level starts in one
+    identation="" # Identation starts at 0
+    level=1 # Level starts at 1
+    pointerLine=1 # Starting the pointer at line 1
     unset value_if_any # Unseting the value flag
     for element in ${key}; do
+
+      # Pointer position
+      logMessage debug "    Pointer: ${pointerLine}"
+
       logMessage debug "    Key element #${level}: ${element}"
 
       # Checking if the element is already in the file
       if [[ `grep -e "^${identation}${element}:" "${outputFile}"` ]]; then
-        # Line found - skipping
-        logMessage debug "    This line already exists - Ignoring"
-        true
+
+        # Element found in file - Getting last ocurrence
+        lineFound=`grep -n -e "^${identation}${element}:" "${outputFile}" | tac | head -n1 | cut -d: -f1`
+        logMessage debug "    Element found at line: ${lineFound}"
+
+        # Checking if it's our element
+        if [[ $lineFound -gt $pointerLine ]]; then
+          # OK - This is our line
+          logMessage debug "    Found after pointer - This is our line"
+          willWrite="false"
+          pointerLine=${lineFound} # Updating the pointer
+        else
+          logMessage debug "    Found before pointer - Not our line"
+          willWrite="true"
+        fi
 
       else
         # Line not found - will write
+        logMessage debug "    No element found"
+        willWrite="true"
+      fi
+
+      # Deciding wether to write the line
+      if [[ $willWrite == "true" ]]; then
+
+        # Writing the line
         logMessage debug "    ! New line"
 
         # Checking if the element is the last (to append the value)
@@ -308,10 +335,16 @@ convertFile() {
           value_if_any=" ${value}"
         fi
 
-        # Writing the line
         writeYAML "${identation}${element}:${value_if_any}"
 
+      else
+
+        logMessage debug "    Line already exists (line ${pointerLine}) - Ignoring"
+
       fi
+
+      # Updating the pointer and ignoring the line
+      pointerLine=`grep -n -e "^${identation}${element}:" "${outputFile}" | cut -d: -f1`
 
       # Preparing the next iteration
       identation="${identation}  "
