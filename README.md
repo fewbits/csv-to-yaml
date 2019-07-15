@@ -9,6 +9,7 @@ This is very basic Shell Script that converts a transposed CSV file to a beautif
 ## Dependencies
 
 - `bash`
+- `csvtool` (*Package Manager*)
 - `yamllint` (*Package Manager* or `pip`)
 
 ## Example
