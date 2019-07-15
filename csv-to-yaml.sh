@@ -1,134 +1,353 @@
 #!/bin/bash
 
-# TODO: -f FILE
-# TODO: -d DELIMITER
-# TODO: -t (TRANSPOSE)
-
 ##########
 # Config #
 ##########
+optDelimiter=","
+optHeader="Lowbit Tools - CSV to YAML"
+optNull="[Null]"
 optTempFile="/tmp/csv-to-yaml.tmp"
-optDelimiter="|"
+optVersion="v0.0.2-dev"
+
+#########
+# Flags #
+#########
+flagDebug="false"
+flagStep="false"
+flagTranspose="false"
 
 #############
 # Functions #
 #############
 
 getHelp() {
-  echo "Lowbit Tools - CSV to YAML"
+  echo "${optHeader}"
   echo
   echo "Syntax:"
-  echo "  `basename $0` -f FILE [-d DELIMITER] [--step]"
+  echo
+  echo "  `basename $0` [--debug] --file FILE [--delimiter DELIMITER] [--transpose] [--step]"
+  echo "  `basename $0` --help"
+  echo "  `basename $0` --version"
+  echo
+  echo "All options:"
+  echo
+  echo "  -d|--delimiter DELIMITER"
+  echo "      Optional - The DELIMITER character to be used"
+  echo "      Defaults to comma (,)"
+  echo
+  echo "  -f|--file FILE"
+  echo "      Required - The input CSV FILE to be converted"
+  echo
+  echo "  -h|--help"
+  echo "      Shows this help message"
+  echo
+  echo "  -s|--step"
+  echo "      Optional - Asks for confirmation before each step"
+  echo "      (Used for debugging)"
+  echo
+  echo "  -t|--transpose"
+  echo "      Optional - Transposes the input CSV file before converting it to YAML"
+  echo
+  echo "  -v|--version"
+  echo "      Shows the version of the script"
+  echo
+  echo "  -D|--debug"
+  echo "      Optional - Displays debug messages"
+  echo "      (Used for debugging)"
+  exit 0
+}
+
+getVersion() {
+  echo "${optHeader}"
+  echo "Version: ${optVersion}"
+  exit 0
+}
+
+logMessage() { # Logs a message
+
+  # Validating the number of arguments
+  if [[ ! "${2}" ]]; then
+    echo "Error: 'sysLogMessage' function called with wrong number of arguments (expected 2)"
+    exit 1
+  fi
+
+  # Setting the args
+  logType=$1        # Log Type (info/debug/error)
+  logString="${2}"  # Log Message (any string)
+
+  # Validating the logType argument
+  case $logType in
+    "info")
+      # Valid - Always log
+      logFlag=true
+      logTypeColor="\e[36minfo \e[0m"
+      ;;
+
+    "debug")
+      # Valid - Log only when DEBUG=1 is set
+      if [[ $flagDebug == "true" ]]; then
+        logFlag=true
+      else
+        logFlag=false
+      fi
+      logTypeColor="\e[90mdebug\e[0m"
+      ;;
+
+    "error")
+      # Valid - Always log
+      logFlag=true
+      logTypeColor="\e[31merror\e[0m"
+      ;;
+
+    *)
+      echo "Error: 'sysLogMessage' function called with wrong log type"
+      exit 1
+      ;;
+  esac
+
+  if [ $logFlag == "true" ]; then
+    echo -e "[`date +'%Y-%m-%d %H:%M:%S'`] [$logTypeColor] ${logString}"
+  fi
+
+  # Exiting if this is an error message
+  if [ $logType == "error" ]; then
+    exit 1
+  fi
+
+}
+
+nextStep() {
+  if [[ $flagStep == "true" ]]; then
+    read -p "Step mode - Hit [ENTER] to continue..."
+  fi
+}
+
+writeYAML() {
+  yamlLine="${1}"
+
+  logMessage info "YAML line: ${yamlLine}"
+  echo "${yamlLine}" >> "${outputFile}"
 }
 
 readArguments() {
 
-  # First argument must be a CSV file
-  if [[ $1 ]]; then
-    if [[ -f $1 ]]; then
-      echo "OK - valid file"
-    else
-      echo "File not found"
-      exit 1
-    fi
-  else
-    echo "Missing file argument"
-    exit 1
+  # User must pass at least one argument, or we print a help message
+  if [[ ! $1 ]]; then
+    getHelp
   fi
 
-  # Saving the file to a variable
-  inputFile=$1
+  # Looping through the user arguments
+  while [[ $1 ]]; do
+    logMessage debug "Processing argument: ${1}"
+
+    case "${1}" in
+      "-D"|"--debug")
+        flagDebug="true"
+        logMessage debug "Debug option enabled"
+        ;;
+      "-d"|"--delimiter")
+        shift
+
+        if [[ $1 ]]; then
+
+          # Validating the lenght of the delimiter
+          if [[ ${#1} -eq 1 ]]; then
+            optDelimiter="${1}"
+            logMessage debug "New delimiter: ${optDelimiter}"
+          else
+            logMessage error "The delimiter must be exactly 1 character (received '${1}')"
+          fi
+
+        else
+            logMessage error "Missing the DELIMITER value"
+
+        fi
+
+        ;;
+      "-f"|"--file")
+        shift
+
+        if [[ $1 ]]; then
+
+          # Validating if this is a valid file
+          if [[ -f ${1} ]]; then
+            inputFile="${1}"
+            logMessage debug "Input file: $inputFile"
+          else
+            logMessage error "Input file not found (received '${1}')"
+          fi
+
+        else
+            logMessage error "Missing the FILE value"
+
+        fi
+
+        ;;
+      "-h"|"--help")
+        getHelp
+        ;;
+
+      "-s"|"--step")
+        flagStep="true"
+        logMessage debug "Step option enabled"
+        ;;
+
+      "-t"|"--transpose")
+        flagTranspose="true"
+        logMessage debug "Transpose option enabled"
+        ;;
+      
+      "-v"|"--version")
+        getVersion
+        ;;
+
+      *)
+        logMessage debug "Unknown argument - Ignoring"
+        ;;
+
+    esac
+
+    shift
+  done
+}
+
+checkEnvironment() {
+
+  # The input CSV file is required
+  if [[ ! ${inputFile} ]]; then
+    logMessage error "Missing file parameter (--file FILE)"
+  fi
+
+}
+
+prepareEnvironment() {
+  # Setting Output file name
   outputFile=`echo "${inputFile}" | sed s/'.csv'/'.yml'/g`
+  logMessage debug "Output file: ${outputFile}"
 
-  echo "Input file => ${inputFile}"
-  echo "Output file => ${outputFile}"
+  # Emptying files
+  logMessage debug "Emptying files"
+  > ${optTempFile}  # Temporary file
+  > ${outputFile}   # Output file
+  nextStep
 
+  # Generating initial temporary file
+  logMessage debug "Creating temp file"
+  cp "${inputFile}" "${optTempFile}"
+  nextStep
 
+  # Transposing, if needed
+  if [[ $flagTranspose == "true" ]]; then
+    logMessage debug "Transposing input file"
+    csvtool transpose "${optTempFile}" > "${optTempFile}.1"
+    mv "${optTempFile}.1" "${optTempFile}"
+    nextStep
+  fi
+
+  # Ordering temporary file
+  logMessage debug "Ordering temp file"
+  sort "${optTempFile}" > "${optTempFile}.1"
+  mv "${optTempFile}.1" "${optTempFile}"
+  nextStep
+
+}
+
+convertFile() {
+
+  logMessage debug "Starting file convertion"
+
+  # Writing the initial YAML syntax
+  writeYAML "---"
+
+  nextStep
+
+  # Looping through the lines
+  IFS=$'\n'
+  for line in `cat ${optTempFile}`; do
+    IFS=$'\n'
+
+    # Getting line
+    logMessage debug "Line: ${line}"
+
+    # Getting Key
+    key=`echo ${line} | cut -d${optDelimiter} -f1`
+    logMessage debug "  Key: ${key}"
+
+    # Getting Value
+    value=`echo ${line} | cut -d${optDelimiter} -f2`
+    if [[ $value == "" ]]; then
+      value="${optNull}"
+    fi
+    logMessage debug "  Value: ${value}"
+
+    # Counting the number of elements in key
+    elements=`echo "${key}" | tr "." "\n" | wc -l`
+    logMessage debug "  Key elements: ${elements}"
+
+    # Loop though key elements
+    IFS="."
+    identation="" # Identation starts in zero
+    level=1 # Level starts in one
+    unset value_if_any # Unseting the value flag
+    for element in ${key}; do
+      logMessage debug "    Key element #${level}: ${element}"
+
+      # Checking if the element is already in the file
+      if [[ `grep -e "^${identation}${element}:" "${outputFile}"` ]]; then
+        # Line found - skipping
+        true
+
+      else
+        # Line not found - will write
+
+        # Checking if the element is the last (to append the value)
+        if [[ ${level} -eq ${elements} ]]; then
+          value_if_any=" ${value}"
+        fi
+
+        # Writing the line
+        writeYAML "${identation}${element}:${value_if_any}"
+
+      fi
+
+      # Preparing the next iteration
+      identation="${identation}  "
+      ((level++))
+
+      nextStep
+
+    done
+
+  logMessage debug "End of line"
+  nextStep
+
+  done
+
+  logMessage debug "End of file"
+
+  unset IFS
+
+}
+
+validateFile() {
+  # Validating the generated YAML
+  logMessage debug "Validating the generated YAML file"
+  yamllint ${outputFile}
+}
+
+cleanEnvironment() {
+  # Cleaning the mess
+  logMessage debug "Cleaning temporary files"
+  rm "${optTempFile}"
 }
 
 ##########
 # Script #
 ##########
 
-# The temp files must be empty
-> ${optTempFile}.1
-> ${optTempFile}.2
-
-# The CSV file must be alphabetically ordered
-sort ${inputFile} >> ${optTempFile}.1
-
-# Writing the initial YAML syntax
-echo "---" >> "${optTempFile}.2"
-
-# Loop through the lines
-IFS=$'\n'
-for line in `cat ${optTempFile}.1`; do
-  IFS=$'\n'
-
-  # Getting line
-  echo "Line => ${line}"
-
-  # Getting Key
-  key=`echo ${line} | cut -d${optDelimiter} -f1`
-  echo "Key => ${key}"
-
-  # Getting Value
-  value=`echo ${line} | cut -d${optDelimiter} -f2`
-  if [[ $value == "" ]]; then
-    value="Null"
-  fi
-  echo "Value => ${value}"
-
-  # Counting the number of elements in key
-  elements=`echo "${key}" | tr "." "\n" | wc -l`
-  echo "Elementos => ${elements}"
-
-  # Loop though key elements
-  IFS="."
-  identation="" # Identation starts in zero
-  level=1 # Level starts in one
-  unset value_if_any # Unseting the value flag
-  for element in ${key}; do
-    echo "Elemento (${level}) => ${element}"
-
-    # Checking if the element is already in the file
-    if [[ `grep -e "^${identation}${element}:" "${optTempFile}.2"` ]]; then
-      # Line found - skipping
-      true
-
-    else
-      # Line not found - writing
-      # Checking if the element is the last (to append the value)
-      if [[ ${level} -eq ${elements} ]]; then
-        value_if_any=" ${value}"
-      fi
-
-      # Finally writing the line
-      echo "${identation}${element}:${value_if_any}" >> "${optTempFile}.2"
-
-    fi
-
-    # Preparing the next iteration
-    identation="${identation}  "
-    ((level++))
-
-  done
-
-done
-
-unset IFS
-
-# Wow! I think this worked. Lets save the file
-echo "Saving the final YAML to ${outputFile}"
-cp "${optTempFile}.2" "${outputFile}"
-
-# Cleaning the mess
-rm "${optTempFile}.1"
-rm "${optTempFile}.2"
-
-# The End, my friend.
-echo "CSV file converted (I guess)"; echo
-cat "${outputFile}"; echo
-
-# Validating the awesome YAML
-yamllint ${outputFile}
+readArguments $@
+checkEnvironment
+prepareEnvironment
+convertFile
+validateFile
+cleanEnvironment
