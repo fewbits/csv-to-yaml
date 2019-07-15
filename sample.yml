@@ -1,11 +1,12 @@
 ---
 computer:
-  brand: Generic Brand
-  price: US$499
-  specs:
+  brand: HellLet PackYard
+  motherboard:
     cpu:
-      clock: 1000GHz
-      cores: 4
+      sockets: 1
+      type: LGA 1151
     memory:
+      banks: 4
       max: 32Gb
-      slots: 4
+      type: DDR4
+  price: US$499.99
