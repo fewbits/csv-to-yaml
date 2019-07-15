@@ -7,7 +7,7 @@ optDelimiter=","
 optHeader="Lowbit Tools - CSV to YAML"
 optNull="[Null]"
 optTempFile="/tmp/csv-to-yaml.tmp"
-optVersion="v0.0.3"
+optVersion="v0.0.3-dev"
 
 #########
 # Flags #
@@ -295,13 +295,16 @@ convertFile() {
       # Checking if the element is already in the file
       if [[ `grep -e "^${identation}${element}:" "${outputFile}"` ]]; then
         # Line found - skipping
+        logMessage debug "    This line already exists - Ignoring"
         true
 
       else
         # Line not found - will write
+        logMessage debug "    ! New line"
 
         # Checking if the element is the last (to append the value)
         if [[ ${level} -eq ${elements} ]]; then
+          logMessage debug "    ! Last element - Appending value"
           value_if_any=" ${value}"
         fi
 
@@ -324,6 +327,7 @@ convertFile() {
   done
 
   logMessage debug "End of file"
+  nextStep
 
   unset IFS
 
