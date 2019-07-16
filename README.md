@@ -54,7 +54,7 @@ The following table describes all of the current available command-line options 
 
 The output will be a file with the same path and name as the input one, only with the `.yml` extension instead of the `.csv`.
 
-Using our `sample.csv` file as an example, the output will be like this:
+Using our `sample.csv` file as an example, the output would be a file named `sample.yml` like this:
 
 ```yaml
 computer:
