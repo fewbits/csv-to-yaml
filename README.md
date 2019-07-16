@@ -1,4 +1,4 @@
-# csv-to-yaml
+# CSV to YAML
 
 A *Shell Script* tool that converts a **CSV** to **YAML**.
 
@@ -12,7 +12,7 @@ This is a basic *Shell Script* that converts a **transposed CSV file** to a **pr
 - `csvtool` (via *Package Manager* - Used with `--transpose` option)
 - `yamllint` (via *Package Manager* or `pip` - Used for validating the generated *YAML* file.)
 
-## CSV file
+## CSV File
 
 The input file must be a **transposed CSV** with the format `hierarchical.key.separated.by.dots,value` per line. This repository includes a sample *CSV* file named `sample.csv`, which looks like this:
 
@@ -37,6 +37,8 @@ The script is executed like this:
 ```
 
 ## Script Options
+
+The following table describes all of the current available command-line options for the script:
 
 | **Long form** | **Short form**  | **Extra value**  | **Type**  | **Description**                                                                   |
 | ------------- | --------------- | ---------------- | --------- | --------------------------------------------------------------------------------- |
