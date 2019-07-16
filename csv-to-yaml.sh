@@ -7,7 +7,7 @@ optDelimiter=","
 optHeader="Lowbit Tools - CSV to YAML"
 optNull="Null"
 optTempFile="/tmp/csv-to-yaml.tmp"
-optVersion="v0.0.5"
+optVersion="v1.0.0"
 
 #########
 # Flags #
