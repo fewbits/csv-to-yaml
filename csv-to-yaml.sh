@@ -5,9 +5,9 @@
 ##########
 optDelimiter=","
 optHeader="Lowbit Tools - CSV to YAML"
-optNull="[Null]"
+optNull="Null"
 optTempFile="/tmp/csv-to-yaml.tmp"
-optVersion="v0.0.3-dev"
+optVersion="v0.0.5"
 
 #########
 # Flags #
@@ -172,7 +172,7 @@ readArguments() {
           # Validating if this is a valid file
           if [[ -f ${1} ]]; then
             inputFile="${1}"
-            logMessage debug "Input file: $inputFile"
+            logMessage info "Input file: $inputFile"
           else
             logMessage error "Input file not found (received '${1}')"
           fi
@@ -223,7 +223,7 @@ checkEnvironment() {
 prepareEnvironment() {
   # Setting Output file name
   outputFile=`echo "${inputFile}" | sed s/'.csv'/'.yml'/g`
-  logMessage debug "Output file: ${outputFile}"
+  logMessage info "Output file: ${outputFile}"
 
   # Emptying files
   logMessage debug "Emptying files"
@@ -303,7 +303,7 @@ convertFile() {
       if [[ `grep -e "^${identation}${element}:" "${outputFile}"` ]]; then
 
         # Element found in file - Getting last ocurrence
-        lineFound=`grep -n -e "^${identation}${element}:" "${outputFile}" | tac | head -n1 | cut -d: -f1`
+        lineFound=`grep -n -e "^${identation}${element}:" "${outputFile}" | tac | head -n1 |cut -d: -f1`
         logMessage debug "    Element found at line: ${lineFound}"
 
         # Checking if it's our element
@@ -311,7 +311,7 @@ convertFile() {
           # OK - This is our line
           logMessage debug "    Found after pointer - This is our line"
           willWrite="false"
-          pointerLine=${lineFound} # Updating the pointer
+          pointerLine="${lineFound}" # Updating the pointer
         else
           logMessage debug "    Found before pointer - Not our line"
           willWrite="true"
@@ -344,7 +344,7 @@ convertFile() {
       fi
 
       # Updating the pointer and ignoring the line
-      pointerLine=`grep -n -e "^${identation}${element}:" "${outputFile}" | cut -d: -f1`
+      pointerLine=`grep -n -e "^${identation}${element}:" "${outputFile}" | tac | head -n1 |cut -d: -f1`
 
       # Preparing the next iteration
       identation="${identation}  "
@@ -368,8 +368,8 @@ convertFile() {
 
 validateFile() {
   # Validating the generated YAML
-  logMessage debug "Validating the generated YAML file"
-  yamllint ${outputFile}
+  logMessage info "Validating the generated YAML file"
+  yamllint --config-data "{extends: relaxed, rules: {line-length: disable}}" ${outputFile}
 }
 
 cleanEnvironment() {
@@ -388,3 +388,5 @@ prepareEnvironment
 convertFile
 validateFile
 cleanEnvironment
+
+logMessage info "End of file convertion"
