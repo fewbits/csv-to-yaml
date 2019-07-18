@@ -26,7 +26,7 @@ computer.motherboard.memory.type,DDR4
 computer.motherboard.memory.max,32Gb
 ```
 
-If your input *CSV* file is not transposed, don't worry. You can use the option `--transpose` to transpose the *CSV* file on-the-fly.
+If your input *CSV* file is not transposed, don't worry. You can use the `--transpose` option to transpose the *CSV* file on-the-fly.
 
 ## Example of Execution
 
