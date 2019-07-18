@@ -1,6 +1,6 @@
 # CSV to YAML
 
-A *Shell Script* tool that converts a **CSV** to **YAML**.
+A *Shell Script* tool that converts a **CSV** file to **YAML**.
 
 ## About
 
